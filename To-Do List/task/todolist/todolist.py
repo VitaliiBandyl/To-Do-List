@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Date
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.orm import sessionmaker
 
 ENGINE = create_engine('sqlite:///todo.db?check_same_thread=False')
@@ -15,7 +15,7 @@ class Task(BASE):
     deadline = Column(Date, default=datetime.today())
 
     def __repr__(self):
-        return f"{self.id}. {self.task}"
+        return self.task
 
 
 class ToDoList:
@@ -26,15 +26,19 @@ class ToDoList:
         """Read user action from standard input"""
 
         actions = {
-            1: self.today_tasks,
-            2: self.add_task,
+            1: self.show_today_tasks,
+            2: self.show_weekly_tasks,
+            3: self.show_all_tasks,
+            4: self.add_task,
             0: self.exit
         }
 
         commands = [
             "1) Today's tasks",
-            "2) Add task",
-            "0) Exit"
+            "2) Week's tasks",
+            "3) All tasks",
+            "4) Add task",
+            "0) Exit",
         ]
         print(*commands, sep="\n")
 
@@ -42,16 +46,45 @@ class ToDoList:
         print()
         actions[action]()
 
-    def today_tasks(self):
-        """Prints tasks due today"""
+    def show_today_tasks(self):
+        """Shows tasks due today"""
 
-        tasks = self.session.query(Task).all()
-        print("Today:")
+        today = datetime.today()
+        tasks = self.session.query(Task).filter(Task.deadline == today.date()).all()
+        print(f"Today {today.day} {today.strftime('%b')}:")
         if not tasks:
             print("Nothing to do!")
         else:
-            for task in tasks:
-                print(task)
+            for num, task in enumerate(tasks, start=1):
+                print(f"{num}. {task}")
+
+        self.read_action()
+
+    def show_weekly_tasks(self):
+        """Shows tasks due to week"""
+
+        day = datetime.today()
+        for _ in range(7):
+            print(f"{day.strftime('%A %d %b')}:")
+
+            tasks = self.session.query(Task).filter(Task.deadline == day.date()).all()
+            if not tasks:
+                print("Nothing to do!")
+            for num, task in enumerate(tasks, start=1):
+                print(f"{num}. {task}")
+            print()
+
+            day = day + timedelta(days=1)
+
+        self.read_action()
+
+    def show_all_tasks(self):
+        """Shows all tasks"""
+
+        tasks = self.session.query(Task).all()
+        print("All tasks:")
+        for num, task in enumerate(tasks, start=1):
+            print(f"{num}. {task}. {task.deadline.day} {task.deadline.strftime('%b')}")
 
         self.read_action()
 
@@ -60,8 +93,12 @@ class ToDoList:
 
         print("Enter task")
         task = input()
+        print("Enter deadline")
+        deadline = input()
+        format_ = "%Y-%m-%d"
+        deadline = datetime.strptime(deadline, format_)
 
-        new_task = Task(task=task)
+        new_task = Task(task=task, deadline=deadline)
         self.session.add(new_task)
         self.session.commit()
 

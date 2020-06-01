@@ -160,12 +160,6 @@ files:
     if __name__ == '__main__':
         ToDoList('todolist.todolist').run_tests()
   learner_created: false
-- name: todolist/todo.db
-  visible: true
-  learner_created: true
-- name: todo.db
-  visible: true
-  learner_created: true
 feedback_link: https://hyperskill.org/projects/105/stages/571/implement
 status: Solved
 record: 2
