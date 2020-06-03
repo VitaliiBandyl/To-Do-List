@@ -342,12 +342,6 @@ files:
     if __name__ == '__main__':
         main()
   learner_created: true
-- name: todolist/todo.db
-  visible: true
-  learner_created: true
-- name: todo.db
-  visible: true
-  learner_created: true
 feedback_link: https://hyperskill.org/projects/105/stages/572/implement
 status: Solved
-record: -1
+record: 3

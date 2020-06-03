@@ -9,6 +9,8 @@ BASE = declarative_base()
 
 
 class Task(BASE):
+    """Table in database"""
+
     __tablename__ = 'task'
     id = Column(Integer, primary_key=True)
     task = Column(String)
@@ -18,7 +20,7 @@ class Task(BASE):
         return self.task
 
 
-class ToDoList:
+class TaskList:
     def __init__(self, session):
         self.session = session
 
@@ -27,9 +29,11 @@ class ToDoList:
 
         actions = {
             1: self.show_today_tasks,
-            2: self.show_weekly_tasks,
+            2: self.show_week_tasks,
             3: self.show_all_tasks,
-            4: self.add_task,
+            4: self.missed_tasks,
+            5: self.add_task,
+            6: self.delete_task,
             0: self.exit
         }
 
@@ -37,7 +41,9 @@ class ToDoList:
             "1) Today's tasks",
             "2) Week's tasks",
             "3) All tasks",
-            "4) Add task",
+            "4) Missed tasks",
+            "5) Add task",
+            "6) Delete task",
             "0) Exit",
         ]
         print(*commands, sep="\n")
@@ -60,7 +66,7 @@ class ToDoList:
 
         self.read_action()
 
-    def show_weekly_tasks(self):
+    def show_week_tasks(self):
         """Shows tasks due to week"""
 
         day = datetime.today()
@@ -105,6 +111,32 @@ class ToDoList:
         print("The task has been added!")
         self.read_action()
 
+    def missed_tasks(self):
+        """Shows tasks whose deadline are missed"""
+        today = datetime.today()
+
+        tasks = self.session.query(Task).filter(Task.deadline < today.date()).all()
+        print("Missed tasks:")
+        for num, task in enumerate(tasks, start=1):
+            print(f"{num}. {task}. {task.deadline.day} {task.deadline.strftime('%b')}")
+
+        print()
+        self.read_action()
+
+    def delete_task(self):
+        """Deletes tasks from database"""
+
+        tasks = self.session.query(Task).all()
+        print("Chose the number of the task you want to delete:")
+        for num, task in enumerate(tasks, start=1):
+            print(f"{num}. {task}. {task.deadline.day} {task.deadline.strftime('%b')}")
+
+        n = int(input()) - 1  # Compensation enumerate start=1
+        self.session.delete(tasks[n])
+        self.session.commit()
+        print("The task has been deleted!\n")
+        self.read_action()
+
     def exit(self):
         print("Bye!")
         self.session.close()
@@ -114,7 +146,7 @@ def main():
     BASE.metadata.create_all(ENGINE)
     Session = sessionmaker(bind=ENGINE)
     session = Session()
-    my_to_do_list = ToDoList(session)
+    my_to_do_list = TaskList(session)
     my_to_do_list.read_action()
 
 
